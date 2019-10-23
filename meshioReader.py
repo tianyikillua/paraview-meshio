@@ -15,36 +15,7 @@ __version__ = "0.0.1"
 __status__ = "Development Status :: 4 - Beta"
 
 
-vtk_to_meshio_type = {
-    0: "empty",
-    1: "vertex",
-    3: "line",
-    5: "triangle",
-    7: "polygon",
-    9: "quad",
-    10: "tetra",
-    12: "hexahedron",
-    13: "wedge",
-    14: "pyramid",
-    15: "penta_prism",
-    16: "hexa_prism",
-    21: "line3",
-    22: "triangle6",
-    23: "quad8",
-    24: "tetra10",
-    25: "hexahedron20",
-    26: "wedge15",
-    27: "pyramid13",
-    28: "quad9",
-    29: "hexahedron27",
-    30: "quad6",
-    31: "wedge12",
-    32: "wedge18",
-    33: "hexahedron24",
-    34: "triangle7",
-    35: "line4",
-}
-meshio_to_vtk_type = {v: k for k, v in vtk_to_meshio_type.items()}
+meshio_to_vtk_type = meshio._vtk.meshio_to_vtk_type
 meshio_supported_ext = [
     ext[1:] for ext in meshio._helpers._extension_to_filetype.keys()
 ]
