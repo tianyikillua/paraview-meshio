@@ -19,6 +19,7 @@ meshio_to_vtk_type = meshio._vtk.meshio_to_vtk_type
 meshio_supported_ext = [
     ext[1:] for ext in meshio._helpers._extension_to_filetype.keys()
 ]
+meshio_input_filetypes = ["automatic"] + meshio._helpers.input_filetypes
 
 
 @smproxy.reader(
@@ -32,22 +33,45 @@ class meshioReader(VTKPythonAlgorithmBase):
             self, nInputPorts=0, nOutputPorts=1, outputType="vtkUnstructuredGrid"
         )
         self._filename = None
+        self._file_format = None
 
     @smproperty.stringvector(name="FileName")
     @smdomain.filelist()
     @smhint.filechooser(
         extensions=meshio_supported_ext, file_description="meshio-supported files"
     )
-    def SetFileName(self, name):
-        if self._filename != name:
-            self._filename = name
+    def SetFileName(self, filename):
+        if self._filename != filename:
+            self._filename = filename
+            self.Modified()
+
+    @smproperty.stringvector(name="StringInfo", information_only="1")
+    def GetStrings(self):
+        return meshio_input_filetypes
+
+    @smproperty.stringvector(name="FileFormat", number_of_elements="1")
+    @smdomain.xml(
+        """<StringListDomain name="list">
+                <RequiredProperties>
+                    <Property name="StringInfo" function="StringInfo"/>
+                </RequiredProperties>
+            </StringListDomain>
+        """
+    )
+    def SetFileFormat(self, file_format):
+        # Automatically deduce input format
+        if file_format == "automatic":
+            file_format = None
+
+        if self._file_format != file_format:
+            self._file_format = file_format
             self.Modified()
 
     def RequestData(self, request, inInfo, outInfo):
         output = dsa.WrapDataObject(vtkUnstructuredGrid.GetData(outInfo))
 
         # Use meshio to read the mesh
-        mesh = meshio.read(self._filename)
+        mesh = meshio.read(self._filename, self._file_format)
         points, cells = mesh.points, mesh.cells
 
         # Nodes
