@@ -1,17 +1,20 @@
 import meshio
 import numpy as np
-
-from paraview.util.vtkAlgorithm import smproperty, smproxy, smdomain, smhint
+from paraview.util.vtkAlgorithm import (
+    VTKPythonAlgorithmBase,
+    smdomain,
+    smhint,
+    smproperty,
+    smproxy,
+)
 from vtkmodules.numpy_interface import dataset_adapter as dsa
-from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtkmodules.vtkCommonDataModel import vtkUnstructuredGrid
-
 
 __author__ = "Tianyi Li"
 __email__ = "tianyikillua@gmail.com"
 __copyright__ = "Copyright (c) 2019 {} <{}>".format(__author__, __email__)
 __license__ = "License :: OSI Approved :: MIT License"
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 __status__ = "Development Status :: 4 - Beta"
 
 
@@ -90,12 +93,12 @@ class meshioReader(VTKPythonAlgorithmBase):
             cell_types = np.hstack(
                 [cell_types, np.full(ncells, vtk_type, dtype=np.ubyte)]
             )
+            offsets = len(cell_conn) + (1 + npoints) * np.arange(ncells, dtype=int)
+            cell_offsets = np.hstack([cell_offsets, offsets])
             conn = np.hstack(
                 [npoints * np.ones((ncells, 1), dtype=int), cells[meshio_type]]
             ).flatten()
             cell_conn = np.hstack([cell_conn, conn])
-            offsets = len(cell_offsets) + (1 + npoints) * np.arange(ncells, dtype=int)
-            cell_offsets = np.hstack([cell_offsets, offsets])
         output.SetCells(cell_types, cell_offsets, cell_conn)
 
         # Point data
