@@ -14,21 +14,20 @@ __author__ = "Tianyi Li"
 __email__ = "tianyikillua@gmail.com"
 __copyright__ = "Copyright (c) 2019 {} <{}>".format(__author__, __email__)
 __license__ = "License :: OSI Approved :: MIT License"
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __status__ = "Development Status :: 4 - Beta"
 
-
+vtk_to_meshio_type = meshio._vtk.vtk_to_meshio_type
 meshio_to_vtk_type = meshio._vtk.meshio_to_vtk_type
-meshio_supported_ext = [
-    ext[1:] for ext in meshio._helpers._extension_to_filetype.keys()
-]
+meshio_extensions = [ext[1:] for ext in meshio._helpers._extension_to_filetype.keys()]
 meshio_input_filetypes = ["automatic"] + meshio._helpers.input_filetypes
 
 
 @smproxy.reader(
     label="meshio Reader",
-    extensions=meshio_supported_ext,
+    extensions=meshio_extensions,
     file_description="meshio-supported files",
+    support_reload=False,
 )
 class meshioReader(VTKPythonAlgorithmBase):
     def __init__(self):
@@ -41,7 +40,7 @@ class meshioReader(VTKPythonAlgorithmBase):
     @smproperty.stringvector(name="FileName")
     @smdomain.filelist()
     @smhint.filechooser(
-        extensions=meshio_supported_ext, file_description="meshio-supported files"
+        extensions=meshio_extensions, file_description="meshio-supported files"
     )
     def SetFileName(self, filename):
         if self._filename != filename:
@@ -70,19 +69,19 @@ class meshioReader(VTKPythonAlgorithmBase):
             self._file_format = file_format
             self.Modified()
 
-    def RequestData(self, request, inInfo, outInfo):
-        output = dsa.WrapDataObject(vtkUnstructuredGrid.GetData(outInfo))
+    def RequestData(self, request, inInfoVec, outInfoVec):
+        output = dsa.WrapDataObject(vtkUnstructuredGrid.GetData(outInfoVec))
 
         # Use meshio to read the mesh
         mesh = meshio.read(self._filename, self._file_format)
         points, cells = mesh.points, mesh.cells
 
-        # Nodes
+        # Points
         if points.shape[1] == 2:
             points = np.hstack([points, np.zeros((len(points), 1))])
         output.SetPoints(points)
 
-        # Elements, adapted from
+        # Cells, adapted from
         # https://github.com/nschloe/meshio/blob/master/test/legacy_writer.py
         cell_types = np.array([], dtype=np.ubyte)
         cell_offsets = np.array([], dtype=int)
@@ -131,3 +130,86 @@ class meshioReader(VTKPythonAlgorithmBase):
             output.FieldData.append(array, name)
 
         return 1
+
+
+@smproxy.writer(
+    label="meshio Writer",
+    extensions=meshio_extensions,
+    file_description="meshio-supported files",
+    support_reload=False,
+)
+@smproperty.input(name="Input", port_index=0)
+@smdomain.datatype(dataTypes=["vtkUnstructuredGrid"], composite_data_supported=False)
+class meshioWriter(VTKPythonAlgorithmBase):
+    def __init__(self):
+        VTKPythonAlgorithmBase.__init__(
+            self, nInputPorts=1, nOutputPorts=0, inputType="vtkUnstructuredGrid"
+        )
+        self._filename = None
+
+    @smproperty.stringvector(name="FileName", panel_visibility="never")
+    @smdomain.filelist()
+    def SetFileName(self, filename):
+        if self._filename != filename:
+            self._filename = filename
+            self.Modified()
+
+    def RequestData(self, request, inInfoVec, outInfoVec):
+        mesh = dsa.WrapDataObject(vtkUnstructuredGrid.GetData(inInfoVec[0]))
+
+        # Read points
+        points = np.asarray(mesh.GetPoints())
+
+        # Read cells
+        # Adapted from https://github.com/nschloe/meshio/blob/master/test/legacy_reader.py
+        cell_conn = mesh.GetCells()
+        cell_offsets = mesh.GetCellLocations()
+        cell_types = mesh.GetCellTypes()
+        cells = {}
+        for vtk_cell_type in np.unique(cell_types):
+            offsets = cell_offsets[cell_types == vtk_cell_type]
+            ncells = len(offsets)
+            npoints = cell_conn[offsets[0]]
+            array = np.empty((ncells, npoints), dtype=int)
+            for i in range(npoints):
+                array[:, i] = cell_conn[offsets + i + 1]
+            cells[vtk_to_meshio_type[vtk_cell_type]] = array
+
+        # Read point and field data
+        # Adapted from https://github.com/nschloe/meshio/blob/master/test/legacy_reader.py
+        def _read_data(data):
+            out = {}
+            for i in range(data.VTKObject.GetNumberOfArrays()):
+                name = data.VTKObject.GetArrayName(i)
+                array = np.asarray(data.GetArray(i))
+                out[name] = array
+            return out
+
+        point_data = _read_data(mesh.GetPointData())
+        field_data = _read_data(mesh.GetFieldData())
+
+        # Read cell data
+        cell_data_flattened = _read_data(mesh.GetCellData())
+        cell_data = {}
+        for cell_type in cells:
+            vtk_cell_type = meshio_to_vtk_type[cell_type]
+            mask_cell_type = cell_types == vtk_cell_type
+            cell_data[cell_type] = {}
+            for name, array in cell_data_flattened.items():
+                cell_data[cell_type][name] = array[mask_cell_type]
+
+        # Use meshio to write mesh
+        meshio.write_points_cells(
+            self._filename,
+            points,
+            cells,
+            point_data=point_data,
+            cell_data=cell_data,
+            field_data=field_data,
+        )
+
+        return 1
+
+    def Write(self):
+        self.Modified()
+        self.Update()
