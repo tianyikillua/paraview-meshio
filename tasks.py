@@ -4,7 +4,7 @@ from invoke import task
 @task
 def tag(c):
     version = None
-    with open("meshioReader.py") as fh:
+    with open("meshioPlugin.py") as fh:
         for line in fh:
             if line.startswith("__version__"):
                 version = eval(line.partition(" = ")[2])
