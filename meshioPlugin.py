@@ -14,8 +14,10 @@ __author__ = "Tianyi Li"
 __email__ = "tianyikillua@gmail.com"
 __copyright__ = "Copyright (c) 2019 {} <{}>".format(__author__, __email__)
 __license__ = "License :: OSI Approved :: MIT License"
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 __status__ = "Development Status :: 4 - Beta"
+
+paraview_plugin_version = __version__
 
 vtk_to_meshio_type = meshio._vtk.vtk_to_meshio_type
 meshio_to_vtk_type = meshio._vtk.meshio_to_vtk_type
@@ -24,7 +26,7 @@ meshio_input_filetypes = ["automatic"] + meshio._helpers.input_filetypes
 
 
 @smproxy.reader(
-    label="meshio Reader",
+    name="meshio Reader",
     extensions=meshio_extensions,
     file_description="meshio-supported files",
     support_reload=False,
@@ -53,11 +55,12 @@ class meshioReader(VTKPythonAlgorithmBase):
 
     @smproperty.stringvector(name="FileFormat", number_of_elements="1")
     @smdomain.xml(
-        """<StringListDomain name="list">
-                <RequiredProperties>
-                    <Property name="StringInfo" function="StringInfo"/>
-                </RequiredProperties>
-            </StringListDomain>
+        """
+        <StringListDomain name="list">
+            <RequiredProperties>
+                <Property name="StringInfo" function="StringInfo"/>
+            </RequiredProperties>
+        </StringListDomain>
         """
     )
     def SetFileFormat(self, file_format):
@@ -133,7 +136,7 @@ class meshioReader(VTKPythonAlgorithmBase):
 
 
 @smproxy.writer(
-    label="meshio Writer",
+    name="meshio Writer",
     extensions=meshio_extensions,
     file_description="meshio-supported files",
     support_reload=False,
