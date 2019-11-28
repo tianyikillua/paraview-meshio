@@ -20,7 +20,7 @@ git pull
 ## Usage
 
 When opening the file, `meshio`-supported mesh formats are now automatically available through the *Open* dialog. This means you can now load those that can not be read by ParaView alone
-- Gmsh (.msh), so you no longer need the [GmshReader](https://github.com/Kitware/ParaView/tree/master/Plugins/GmshReader`) plugin
+- Gmsh (.msh), so you no longer need the [GmshReader](https://github.com/Kitware/ParaView/tree/master/Plugins/GmshReader) plugin
 - Abaqus (.inp)
 - Nastran (.nas, .fem)
 - DOLFIN (.xml)
