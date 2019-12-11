@@ -1,5 +1,6 @@
 import meshio
 import numpy as np
+from packaging import version
 from paraview.util.vtkAlgorithm import (
     VTKPythonAlgorithmBase,
     smdomain,
@@ -14,15 +15,21 @@ __author__ = "Tianyi Li"
 __email__ = "tianyikillua@gmail.com"
 __copyright__ = "Copyright (c) 2019 {} <{}>".format(__author__, __email__)
 __license__ = "License :: OSI Approved :: MIT License"
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 __status__ = "Development Status :: 4 - Beta"
 
 paraview_plugin_version = __version__
 
-vtk_to_meshio_type = meshio._vtk.vtk_to_meshio_type
-meshio_to_vtk_type = meshio._vtk.meshio_to_vtk_type
+if version.parse(meshio.__version__) < version.parse("3.3"):
+    vtk_to_meshio_type = meshio._vtk.vtk_to_meshio_type
+    meshio_to_vtk_type = meshio._vtk.meshio_to_vtk_type
+    meshio_input_filetypes = meshio._helpers.input_filetypes
+else:
+    vtk_to_meshio_type = meshio.vtk._vtk.vtk_to_meshio_type
+    meshio_to_vtk_type = meshio.vtk._vtk.meshio_to_vtk_type
+    meshio_input_filetypes = list(meshio._helpers.reader_map.keys())
 meshio_extensions = [ext[1:] for ext in meshio._helpers._extension_to_filetype.keys()]
-meshio_input_filetypes = ["automatic"] + meshio._helpers.input_filetypes
+meshio_input_filetypes = ["automatic"] + meshio_input_filetypes
 
 
 @smproxy.reader(
