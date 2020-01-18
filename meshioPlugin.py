@@ -1,6 +1,5 @@
 import meshio
 import numpy as np
-from packaging import version
 from paraview.util.vtkAlgorithm import (
     VTKPythonAlgorithmBase,
     smdomain,
@@ -15,12 +14,12 @@ __author__ = "Tianyi Li"
 __email__ = "tianyikillua@gmail.com"
 __copyright__ = "Copyright (c) 2019 {} <{}>".format(__author__, __email__)
 __license__ = "License :: OSI Approved :: MIT License"
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 __status__ = "Development Status :: 4 - Beta"
 
 paraview_plugin_version = __version__
 
-if version.parse(meshio.__version__) < version.parse("3.3"):
+if float(meshio.__version__[:3]) < 3.3:
     vtk_to_meshio_type = meshio._vtk.vtk_to_meshio_type
     meshio_to_vtk_type = meshio._vtk.meshio_to_vtk_type
     meshio_input_filetypes = meshio._helpers.input_filetypes
