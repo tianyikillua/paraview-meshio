@@ -1,5 +1,9 @@
 # ParaView `meshio` Reader / Writer
 
+**Important notice** [Nico](https://github.com/nschloe) and I both agreed to include this ParaView plugin in the [meshio](https://github.com/nschloe/meshio) library. It is now done through the [PR #667](https://github.com/nschloe/meshio/pull/667). Hence, this repository is no longer maintained and all future development will be done directly there.
+
+---
+
 This repository contains a ParaView Python plugin (`meshioPlugin.py`) that can be loaded by ParaView to read and write all the mesh formats supported by the [meshio](https://github.com/nschloe/meshio) library.
 
 ## Installation and updates
